@@ -19,6 +19,7 @@
 #define BROADCAST 1
 #define UNKOWN_TARGET 2
 ////////////////////STRUCT DEF//////////////////////////
+#pragma pack(push,1)   //set struct alignment per 1-byte
 typedef struct _ether_hdr
 {
 	uint8_t dmac[MAC_ADDR_LEN];
@@ -39,6 +40,7 @@ typedef struct _arp_hdr{
     uint8_t Target_Proto_addr[IP_ADDR_LEN];
 
 } arp_hdr;
+#pragma pack(pop)
 ////////////////////////////////////////////////////////
 //IP string includes dot(".") so, remove dot and convert to 1byte array
 void convert_str_to_ipaddr(char *ip_str, uint8_t *ip)
@@ -192,9 +194,9 @@ int main(int argc, char *argv[])
         const u_char* receive_packet;
 
         int res = pcap_next_ex(handle, &header, &receive_packet);
-        if (res == 0) 					//none be captured ( timeout )
+        if (res == 0)                   //none be captured ( timeout )
             continue;
-        if (res == -1 || res == -2)		//pcap_next_ex error
+        if (res == -1 || res == -2)     //pcap_next_ex error
             break;
 
 		ether_hdr *receive_eth_h = (ether_hdr *)receive_packet;
