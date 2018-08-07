@@ -40,7 +40,7 @@ typedef struct _arp_hdr{
 
 } arp_hdr;
 ////////////////////////////////////////////////////////
-IP string includes dot(".") so, remove dot and convert to 1byte array
+//IP string includes dot(".") so, remove dot and convert to 1byte array
 void convert_str_to_ipaddr(char *ip_str, uint8_t *ip)
 {
     for(int i=0; i<4;i++)
@@ -56,7 +56,7 @@ void convert_str_to_ipaddr(char *ip_str, uint8_t *ip)
     }
 }
 /////////////////////////////////////////////////////////
-get my MAC address from network interface device name
+//get my MAC address from network interface device name
 using IFREQ
 void get_my_mac_addr(char *dev_name, uint8_t *mac)
 {
@@ -72,7 +72,7 @@ void get_my_mac_addr(char *dev_name, uint8_t *mac)
     }
 }
 ///////////////////////////////////////////////////////////
-get my IP address from network interface device name
+//get my IP address from network interface device name
 using IFREQ
 void get_my_ip_addr(char *dev_name, uint8_t *ip)
 {
@@ -90,8 +90,8 @@ void get_my_ip_addr(char *dev_name, uint8_t *ip)
 }
 
 //////////////////////////////////////////////////////////
-set pointer of MAC address => ff:ff:ff:ff:ff:ff (type = BROADCAST)
-set pointer of MAC address => 00:00:00:00:00:00 (type = UNKOWN_TARGET)
+//set pointer of MAC address => ff:ff:ff:ff:ff:ff (type = BROADCAST)
+//set pointer of MAC address => 00:00:00:00:00:00 (type = UNKOWN_TARGET)
 void set_cast(uint8_t *mac,int type)
 {
     if (type == BROADCAST)
@@ -102,14 +102,14 @@ void set_cast(uint8_t *mac,int type)
             mac[i] = 0x00;
 }
 //////////////////////////////////////////////////////////
-print mac address by pointer of MAC address
+//print mac address by pointer of MAC address
 void print_mac(uint8_t *mac_addr)
 {
 			printf("%.2X-%.2X-%.2X-%.2X-%.2X-%.2X\n",
 			 mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
 }
 ///////////////////////////////////////////////////////////
-get two pointers of ip address
+//get two pointers of ip address
 return 0 : if two ip addresses are different
 return 1 : if two ip addresses are same
 int ip_check(uint8_t *des, uint8_t *src)
@@ -121,7 +121,7 @@ int ip_check(uint8_t *des, uint8_t *src)
     return 1;
 }
 ////////////////////////////////////////////////////////////
-If you want to assign MAC address same as given MAC
+//If you want to assign MAC address same as given MAC
 void mac_assign(uint8_t *des, uint8_t *src)
 {
     for(int i=0; i<MAC_ADDR_LEN; i++)
@@ -141,7 +141,7 @@ int main(int argc, char *argv[])
     char *gateway_ip = argv[3];
 	char errbuf[PCAP_ERRBUF_SIZE];
 
-network interface handle open
+//network interface handle open
     pcap_t* handle = pcap_open_live(dev, BUFSIZ, 1, 1000, errbuf);
 	if (handle == NULL) {
 		fprintf(stderr, "couldn't open device %s: %s\n", dev, errbuf);
